@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" xmlns:bx="https://boxy-svg.com">
+  <g id="object-3">
+    <text style="fill: rgb(0, 179, 255); font-family: Angkor; font-size: 147px; white-space: pre;" x="109.002" y="284.836" id="object-0">krx</text>
+    <path style="fill: rgb(0, 179, 255); transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.672847, 0.402672, -0.172241, 0.287807, -850.68737, -93.939092)" d="M 1066.494 -36.774 A 432.5 432.5 0 0 1 1066.494 770.774 A 474.126 474.126 0 0 0 1066.494 -36.774 Z" bx:shape="crescent 911.5 367 432.5 138 0.94 1@db3d4955" id="object-1"/>
+    <path style="fill: rgb(0, 179, 255); transform-origin: 1205.25px 367px;" transform="matrix(-0.672847, -0.402672, 0.172241, -0.287807, -1062.402731, -151.180218)" d="M 1066.494 -36.774 A 432.5 432.5 0 0 1 1066.494 770.774 A 474.126 474.126 0 0 0 1066.494 -36.774 Z" bx:shape="crescent 911.5 367 432.5 138 0.94 1@db3d4955" id="object-2"/>
+  </g>
+  <defs>
+    <style bx:fonts="Angkor">@import url(https://fonts.googleapis.com/css2?family=Angkor%3Aital%2Cwght%400%2C400&amp;display=swap);</style>
+    <bx:export>
+      <bx:file format="png" href="#object-3" path="Bez nazwy.png"/>
+    </bx:export>
+  </defs>
+</svg>
