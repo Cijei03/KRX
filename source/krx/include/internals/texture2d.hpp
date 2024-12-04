@@ -1,7 +1,8 @@
 #pragma once
 #include "krx_resource.hpp"
+#include "processing_pipeline.hpp"
 
-enum class krxFormat
+enum class krxFormat : uint32_t
 {
 	PRESENT_FORMAT,
 	UINT8_RGBA,
@@ -28,9 +29,12 @@ class krxTexture2D : public krxResource
 protected:
 	friend class krxSwapchain;
 	friend class krxContext;
+	friend class intern::krxPPipelineTriangles;
 	krxTextureCreationInfo Info;
 
 public:
 	krxTexture2D(const krxTextureCreationInfo& CreationInfo);
-	~krxTexture2D();
+	virtual ~krxTexture2D() = default;
+
+	void blit(const krxTexture2D* TextureToBlit);
 }; 

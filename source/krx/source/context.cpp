@@ -131,6 +131,6 @@ void krxContext::draw(const uint32_t VertexStart, const uint32_t VertexCount)
 
 	if (this->Rasterizer.PrimitiveType == krxPrimitiveType::TRIANGLES)
 	{
-		this->draw_triangle(VertexStart, VertexCount);
+		intern::krxPPipelineTriangles(this, VertexStart, VertexCount);
 	}
 }

@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <cstring>
 
-krxPipelineLayout::krxPipelineLayout(const std::vector<krxViewInfo>& Infos, std::vector<uint32_t> AttributesSize)
+krxPipelineLayout::krxPipelineLayout(const std::vector<krxViewInfo>& Infos)
 {
 	for (auto& ViewInfo : Infos)
 	{
@@ -62,6 +62,4 @@ krxPipelineLayout::krxPipelineLayout(const std::vector<krxViewInfo>& Infos, std:
 			}
 		}
 	}
-	AttributesSize.resize(KRX_IMPLEMENTATION_MAX_ATTRIBUTES_COUNT);
-	std::memcpy(this->AttributesSize.data(), AttributesSize.data(), 4 * KRX_IMPLEMENTATION_MAX_ATTRIBUTES_COUNT);
 }

@@ -1,6 +1,0 @@
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/krx.dir
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/01_create_window_with_krx.dir
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/02_enable_validation_layer.dir
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/03_hello_triangle.dir
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/edit_cache.dir
-/media/TanareaData/SoftwareRasterizer/build_cache/CMakeFiles/rebuild_cache.dir

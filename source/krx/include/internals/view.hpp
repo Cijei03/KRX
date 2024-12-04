@@ -2,6 +2,7 @@
 #include "texture2d.hpp"
 #include "buffer.hpp"
 #include <variant>
+#include "processing_pipeline.hpp"
 
 enum class krxTextureTarget
 {
@@ -31,6 +32,7 @@ class krxResourceView
 private:
 	friend class krxPipelineLayout;
 	friend class krxContext;
+	friend class intern::krxPPipelineTriangles;
 	krxViewCreationInfo Info;
 public:
 	krxResourceView(const krxViewCreationInfo& CreationInfo);

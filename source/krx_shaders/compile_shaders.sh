@@ -1,8 +1,15 @@
 #!/bin/bash
 
+KRXSL_OPTIMIZATION_ENABLED=true
+
 function Compile
 {
-	gcc -shared -std=c17 -fPIC -O3 -o $1 $2
+	if [ $KRXSL_OPTIMIZATION_ENABLED ]
+	then
+		gcc -shared -std=c17 -fPIC -O3 -o $1 $2
+	else
+		gcc -shared -std=c17 -fPIC -o $1 $2
+	fi
 }
 
 Compile "hello_triangle_vert.krxsl" "hello_triangle_vert.c"

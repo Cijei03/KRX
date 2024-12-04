@@ -19,6 +19,12 @@ std::unique_ptr<krxResourceView> TriangleVertexBufferView;
 std::unique_ptr<krxPipelineLayout> PipelineLayout;
 std::unique_ptr<krxShaderPipeline> ShaderPipeline;
 
+void FreeResources()
+{
+	SwapchainBackBufferView.reset();
+	Swapchain.reset();
+}
+
 int main()
 {
 	glfwInit();
@@ -72,10 +78,6 @@ int main()
 				.Index = 0,
 				.View = TriangleVertexBufferView.get()
 			}
-		},
-		std::vector<uint32_t>
-		{
-			8
 		}
 	);
 	// Create shaders pipeline.
@@ -119,6 +121,8 @@ int main()
 		Swapchain->present();
 		Frames++;
 	}
+
+	FreeResources();
 
 	glfwTerminate();
 }

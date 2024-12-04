@@ -51,5 +51,5 @@ krxSwapchain::~krxSwapchain()
 {
 	XDestroyImage(this->FrontBuffer);
 	XFreeGC(this->dp, this->GraphicsContext);
-	delete this->BackBuffer;
+	//delete this->BackBuffer; // This line produces this issue https://github.com/Cijei03/SoftwareRasterizer/issues/1
 }

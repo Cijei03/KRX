@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "pipeline_layout.hpp"
 #include "pipeline.hpp"
+#include "processing_pipeline.hpp"
 
 enum class krxPrimitiveType
 {
@@ -20,21 +21,24 @@ enum class krxRasterizerFacing
 enum class krxRasterizerFeature : uint8_t
 {
 	DEPTH_TESTING = 1ul << 0,
-	ONLY_DEPTH = 1ul << 1
+	ONLY_GEOMETRY_PROCESSING = 1ul << 1
 };
 
 class krxContext
 {
 private:
+	friend class intern::krxPPipelineTriangles;
+
 	void draw_triangle(const uint32_t VertexStart, const uint32_t VertexCount);
 private:
 	krxPipelineLayout* PipelineLayout = nullptr;
 	krxShaderPipeline* ShaderPipeline = nullptr;
 public:
-	struct krxRast
+	struct krxRasterizationSettings
 	{
 	private:
 		friend class krxContext;
+		friend class intern::krxPPipelineTriangles;
 		krxPrimitiveType PrimitiveType = krxPrimitiveType::TRIANGLES;
 		krxRasterizerFacing Facing = krxRasterizerFacing::CCW;
 		uint8_t Features = 0;

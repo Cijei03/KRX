@@ -32,5 +32,6 @@ int main()
 		Frames++;
 	}
 
+	glfwDestroyWindow(wnd);
 	glfwTerminate();
 }

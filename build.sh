@@ -9,4 +9,7 @@ cd ./build_cache
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 ninja
 
-cd ..
+cd ../source/krx_shaders
+./compile_shaders.sh
+cp *.krxsl ../../bin
+cd ../..

@@ -20,8 +20,10 @@ link_directories(
 	${CMAKE_SOURCE_DIR}/bin
 )
 
+add_compile_options(-g)
+
 target_sources(${PROJECT_NAME} PRIVATE
-	"source/krx/source/context_draw_triangle.cpp"
+	"source/krx/source/ppipeline_triangles.cpp"
 	"source/krx/source/context_rasterizer.cpp"
 	"source/krx/source/context.cpp"
 	"source/krx/source/swapchain.cpp"
