@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <thread>
+#include <condition_variable>
 #include <glm/glm.hpp>
 #include "constants.hpp"
 
@@ -24,15 +25,30 @@ namespace intern
 		void* fs_main = nullptr;
 		float TriangleAreaMultiplier;
 		std::array<uint8_t*, KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT> RenderTargetOutputs{};
-		std::array<uint16_t, KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT> RenderTargetWidths;
+		std::array<uint16_t, KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT> RenderTargetWidths{};
 		std::array<uint32_t, KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT> RenderTargetOutputsFormats{};
+	};
+
+	enum class krxPPipelineTStatus : uint8_t
+	{
+		UNITIALIZED,
+		IDLE,
+		RENDER,
+		SHUTDOWN,
+		CLOSED
 	};
 
 	class krxPPipelineTriangles
 	{
 	private:
-		std::array<std::thread, 16> Workers;
-		std::array<RasterizerBatch, 16> WorkerBatches;
+		static constexpr uint32_t IMPL_WORKERS_COUNT = 16;
+
+		std::array<std::thread, IMPL_WORKERS_COUNT> Workers;
+		std::array<RasterizerBatch, IMPL_WORKERS_COUNT> WorkerBatches;
+		std::array<krxPPipelineTStatus, IMPL_WORKERS_COUNT> WorkersStatus;
+		std::array<std::condition_variable, IMPL_WORKERS_COUNT> cvs;
+		void* vsOutputInterfaces;
+		std::condition_variable cv;
 
 		struct
 		{
@@ -42,7 +58,10 @@ namespace intern
 		GlobalRasterizationData GlobalRasterizerData;
 
 		friend class ::krxContext;
-		krxPPipelineTriangles(krxContext* Configuration, const uint32_t vStart, const uint32_t vCount);
-		~krxPPipelineTriangles() = default;
+		krxPPipelineTriangles();
+		~krxPPipelineTriangles();
+
+		void process(krxContext* Configuration, const uint32_t vStart, const uint32_t vCount);
+		void shutdown();
 	};
 }

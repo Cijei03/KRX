@@ -29,10 +29,11 @@ class krxContext
 private:
 	friend class intern::krxPPipelineTriangles;
 
-	void draw_triangle(const uint32_t VertexStart, const uint32_t VertexCount);
 private:
 	krxPipelineLayout* PipelineLayout = nullptr;
 	krxShaderPipeline* ShaderPipeline = nullptr;
+
+	intern::krxPPipelineTriangles ppTriangles;
 public:
 	struct krxRasterizationSettings
 	{
@@ -62,4 +63,7 @@ public:
 	void fast_clear_color_targets();
 	void clear_depth_target();
 	void draw(const uint32_t VertexStart, const uint32_t VertexCount);
+
+	krxContext() = default;
+	~krxContext();
 };

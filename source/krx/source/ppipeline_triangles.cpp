@@ -7,62 +7,89 @@
 
 #include <iostream>
 
-static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizationData* GlobalData, const ShaderInterface* fsInput, bool canprint)
+static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizationData* GlobalData, const ShaderInterface* fsInput, std::condition_variable* cv, intern::krxPPipelineTStatus* Status)
 {
-	glm::i16vec2 CurrentPixel = Batch->StartData;
-	const glm::i16vec2 EndData = CurrentPixel + Batch->BatchSize;
-	ShaderInterface FragmentShaderOutput{};
-	glm::f32vec3 Weights;
-	
-	while (CurrentPixel.y < EndData.y)
+	std::mutex m;
+	std::unique_lock<std::mutex> Lock(m);
+	*Status = intern::krxPPipelineTStatus::IDLE;
+	cv->notify_one();
+	while (true)
 	{
-		CurrentPixel.x = Batch->StartData.x;
+		cv->notify_one();
+		cv->wait_for(Lock, std::chrono::milliseconds(200), [Status](){ return *Status != intern::krxPPipelineTStatus::IDLE; });
 
-		while (CurrentPixel.x < EndData.x)
+		if (*Status == intern::krxPPipelineTStatus::RENDER)
 		{
-			int32_t signs[3] =
+			glm::i16vec2 CurrentPixel = Batch->StartData;
+			const glm::i16vec2 EndData = CurrentPixel + Batch->BatchSize;
+			ShaderInterface FragmentShaderOutput{};
+			glm::f32vec3 Weights;
+			
+			while (CurrentPixel.y < EndData.y)
 			{
-				edge_function(CurrentPixel, GlobalData->NDCs[0], GlobalData->NDCs[1]),
-				edge_function(CurrentPixel, GlobalData->NDCs[1], GlobalData->NDCs[2]),
-				edge_function(CurrentPixel, GlobalData->NDCs[2], GlobalData->NDCs[0])
-			};
+				CurrentPixel.x = Batch->StartData.x;
+				bool foundTriangle = false;
 
-			if (GlobalData->check_pixel(signs))
-			{
-				Weights = glm::f32vec3
-				(
-					static_cast<float>(signs[0]) * GlobalData->TriangleAreaMultiplier,
-					static_cast<float>(signs[1]) * GlobalData->TriangleAreaMultiplier,
-					static_cast<float>(signs[2]) * GlobalData->TriangleAreaMultiplier
-				);
-
-				reinterpret_cast<krxFragmentShader>(GlobalData->fs_main)(fsInput, &FragmentShaderOutput, reinterpret_cast<float*>(&Weights));
-
-				for (uint8_t i = 0; i < KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT; i++)
+				while (CurrentPixel.x < EndData.x)
 				{
-					const krxFormat TargetFormat = static_cast<krxFormat>(GlobalData->RenderTargetOutputsFormats[i]);
-
-					if (GlobalData->RenderTargetOutputs[i] != nullptr)
+					int32_t signs[3] =
 					{
-						if (TargetFormat == krxFormat::PRESENT_FORMAT)
+						edge_function(CurrentPixel, GlobalData->NDCs[0], GlobalData->NDCs[1]),
+						edge_function(CurrentPixel, GlobalData->NDCs[1], GlobalData->NDCs[2]),
+						edge_function(CurrentPixel, GlobalData->NDCs[2], GlobalData->NDCs[0])
+					};
+
+					if (GlobalData->check_pixel(signs))
+					{
+						foundTriangle = true;
+						Weights = glm::f32vec3
+						(
+							static_cast<float>(signs[0]) * GlobalData->TriangleAreaMultiplier,
+							static_cast<float>(signs[1]) * GlobalData->TriangleAreaMultiplier,
+							static_cast<float>(signs[2]) * GlobalData->TriangleAreaMultiplier
+						);
+
+						reinterpret_cast<krxFragmentShader>(GlobalData->fs_main)(fsInput, &FragmentShaderOutput, reinterpret_cast<float*>(&Weights));
+
+						for (uint8_t i = 0; i < KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT; i++)
 						{
-							const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
-							const auto PositionInBuffer = reinterpret_cast<glm::u8vec4*>(GlobalData->RenderTargetOutputs[i]);
-							PositionInBuffer[CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x] = glm::u8vec4(Ptr[2] * 255, Ptr[1] * 255, Ptr[0] * 255, Ptr[3] * 255);
+							const krxFormat TargetFormat = static_cast<krxFormat>(GlobalData->RenderTargetOutputsFormats[i]);
+
+							if (GlobalData->RenderTargetOutputs[i] != nullptr)
+							{
+								if (TargetFormat == krxFormat::PRESENT_FORMAT)
+								{
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+									const auto PositionInBuffer = reinterpret_cast<glm::u8vec4*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
+									*PositionInBuffer = glm::u8vec4(Ptr[2] * 255, Ptr[1] * 255, Ptr[0] * 255, Ptr[3] * 255);
+								}
+							}
 						}
 					}
+					else if (foundTriangle)
+					{
+						break;
+					}
+					
+					CurrentPixel.x++;
 				}
+				CurrentPixel.y++;
 			}
-			
-			CurrentPixel.x++;
+			*Status = intern::krxPPipelineTStatus::IDLE;
 		}
-		CurrentPixel.y++;
+		else if (*Status == intern::krxPPipelineTStatus::SHUTDOWN)
+		{
+			break;
+		}
 	}
+
+	*Status = intern::krxPPipelineTStatus::CLOSED;
+	cv->notify_one();
 }
 
 namespace intern
 {
-	krxPPipelineTriangles::krxPPipelineTriangles(krxContext* Configuration, const uint32_t vStart, const uint32_t vCount)
+	void krxPPipelineTriangles::process(krxContext* Configuration, const uint32_t vStart, const uint32_t vCount)
 	{
 		if (Configuration->Rasterizer.Facing == krxRasterizerFacing::CCW)
 		{
@@ -98,8 +125,6 @@ namespace intern
 		{
 			// Declare krxsl variables.
 			ShaderInterface vsInputData[3];
-			ShaderInterface vsOutputInterfaces[3];
-			ShaderInterface fsInputInterface;
 
 			VariablesVS ShaderVariables[3]
 			{
@@ -129,7 +154,7 @@ namespace intern
 					}
 				}
 
-				VertexShaderFunc(&vsInputData[vTriangle], &vsOutputInterfaces[vTriangle], &ShaderVariables[vTriangle]);
+				VertexShaderFunc(&vsInputData[vTriangle], &reinterpret_cast<ShaderInterface*>(this->vsOutputInterfaces)[vTriangle], &ShaderVariables[vTriangle]);
 			}
 
 			// Prepare for rasterization.
@@ -141,6 +166,12 @@ namespace intern
 			this->GlobalRasterizerData.MinTriangleBound.y = min(this->GlobalRasterizerData.NDCs[0].y, this->GlobalRasterizerData.NDCs[1].y, this->GlobalRasterizerData.NDCs[2].y);
 			this->GlobalRasterizerData.MaxTriangleBound.x = max(this->GlobalRasterizerData.NDCs[0].x, this->GlobalRasterizerData.NDCs[1].x, this->GlobalRasterizerData.NDCs[2].x);
 			this->GlobalRasterizerData.MaxTriangleBound.y = max(this->GlobalRasterizerData.NDCs[0].y, this->GlobalRasterizerData.NDCs[1].y, this->GlobalRasterizerData.NDCs[2].y);
+
+			this->GlobalRasterizerData.MinTriangleBound.x = (this->GlobalRasterizerData.MinTriangleBound.x < 0 ? 0 : this->GlobalRasterizerData.MinTriangleBound.x);
+			this->GlobalRasterizerData.MinTriangleBound.y = (this->GlobalRasterizerData.MinTriangleBound.y < 0 ? 0 : this->GlobalRasterizerData.MinTriangleBound.y);
+			this->GlobalRasterizerData.MaxTriangleBound.x = (this->GlobalRasterizerData.MaxTriangleBound.x > Configuration->Rasterizer.Viewport.Position.x + Configuration->Rasterizer.Viewport.Size.x ? 0 : this->GlobalRasterizerData.MaxTriangleBound.x);
+			this->GlobalRasterizerData.MaxTriangleBound.y = (this->GlobalRasterizerData.MaxTriangleBound.y > Configuration->Rasterizer.Viewport.Position.y + Configuration->Rasterizer.Viewport.Size.y ? 0 : this->GlobalRasterizerData.MaxTriangleBound.y);
+			
 
 			this->GlobalRasterizerData.TriangleAreaMultiplier = 1.0f / static_cast<float>(edge_function(this->GlobalRasterizerData.NDCs[0], this->GlobalRasterizerData.NDCs[1], this->GlobalRasterizerData.NDCs[2]));
 
@@ -159,16 +190,56 @@ namespace intern
 					.StartData = StartData,
 					.BatchSize = BatchSize
 				};
-				this->Workers[i] = std::thread(batch_main, &this->WorkerBatches[i], &this->GlobalRasterizerData, vsOutputInterfaces, (i == 0));
+
+				this->WorkersStatus[i] = krxPPipelineTStatus::RENDER;
+				this->cvs[i].notify_one();
 
 				StartData.y += BatchSize.y;
 			}
 
 			for (uint8_t i = 0; i < this->Workers.size(); i++)
 			{
-				this->Workers[i].join();
+				std::mutex m;
+				std::unique_lock<std::mutex> Lock(m);
+				auto Status = &this->WorkersStatus[i];
+				this->cvs[i].wait(Lock, [Status](){ return *Status == krxPPipelineTStatus::IDLE; });
 			}
 
 		}
+	}
+	void krxPPipelineTriangles::shutdown()
+	{
+		for (uint8_t i = 0; i < this->Workers.size(); i++)
+		{
+			this->WorkersStatus[i] = krxPPipelineTStatus::SHUTDOWN;
+			this->cvs[i].notify_one();
+
+			std::mutex m;
+			std::unique_lock<std::mutex> Lock(m);
+			auto Status = &this->WorkersStatus[i];
+			this->cvs[i].wait(Lock, [Status](){ return *Status == krxPPipelineTStatus::CLOSED; });
+		}
+	}
+
+	krxPPipelineTriangles::krxPPipelineTriangles()
+	{
+		ShaderInterface* fsInterfaces = new ShaderInterface[3];
+		this->vsOutputInterfaces = reinterpret_cast<void*>(fsInterfaces);
+
+		for (uint8_t i = 0; i < this->Workers.size(); i++)
+		{
+			this->WorkersStatus[i] = krxPPipelineTStatus::UNITIALIZED;
+
+			std::mutex m;
+			std::unique_lock<std::mutex> Lock(m);
+			this->Workers[i] = std::thread(batch_main, &this->WorkerBatches[i], &this->GlobalRasterizerData, reinterpret_cast<ShaderInterface*>(this->vsOutputInterfaces), &this->cvs[i], &this->WorkersStatus[i]);
+			this->Workers[i].detach();
+			auto Status = &this->WorkersStatus[i];
+			this->cvs[i].wait(Lock, [Status](){ return *Status == krxPPipelineTStatus::IDLE; });
+		}
+	}
+	krxPPipelineTriangles::~krxPPipelineTriangles()
+	{
+		delete[] reinterpret_cast<ShaderInterface*>(this->vsOutputInterfaces);
 	}
 }

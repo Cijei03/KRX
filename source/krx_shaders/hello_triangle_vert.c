@@ -1,5 +1,4 @@
 #include "shader_defs.h"
-#include <stdio.h>
 
 void vs_main(const krx_ShaderInterface* Input, krx_ShaderInterface* Output, krxsl_VariablesVS* krxslVariables)
 {
