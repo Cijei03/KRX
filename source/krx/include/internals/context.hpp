@@ -21,7 +21,7 @@ enum class krxRasterizerFacing
 enum class krxRasterizerFeature : uint8_t
 {
 	DEPTH_TESTING = 1ul << 0,
-	ONLY_GEOMETRY_PROCESSING = 1ul << 1
+	NO_COLOR_BUFFER = 1ul << 1
 };
 
 class krxContext

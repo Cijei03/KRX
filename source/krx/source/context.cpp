@@ -127,6 +127,39 @@ void krxContext::draw(const uint32_t VertexStart, const uint32_t VertexCount)
 	if (this->ShaderPipeline == nullptr)
 	{
 		krxValidationLayerMessage("CONTEXT_draw-NO_SHADER_PIPELINE_BOUND");
+		return;
+	}
+	if (this->PipelineLayout == nullptr)
+	{
+		krxValidationLayerMessage("CONTEXT_draw-NO_PIPELINE_LAYOUT_BOUND");
+		return;
+	}
+	else
+	{
+		bool FoundColorBuffer = false;
+		for (auto& CRTO : this->PipelineLayout->RenderTargetOutputs)
+		{
+			if (CRTO != nullptr)
+			{
+				FoundColorBuffer = true;
+				if (reinterpret_cast<krxTexture2D*>(CRTO->Info.Resource)->Info.Size.Width > this->Rasterizer.Viewport.Position.x + this->Rasterizer.Viewport.Size.x)
+				{
+					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_RENDER_OUTPUT_TARGET");
+					return;
+				}
+				else if (reinterpret_cast<krxTexture2D*>(CRTO->Info.Resource)->Info.Size.Height > this->Rasterizer.Viewport.Position.y + this->Rasterizer.Viewport.Size.y)
+				{
+					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_RENDER_OUTPUT_TARGET");
+					return;
+				}
+			}
+		}
+
+		if (!FoundColorBuffer && !(this->Rasterizer.Features & static_cast<uint8_t>(krxRasterizerFeature::NO_COLOR_BUFFER)))
+		{
+			krxValidationLayerMessage("CONTEXT_draw-NO_COLOR_BUFFER_BOUND_AND_RASTERIZER_FEATURE_NO_COLOR_BUFFER_DISABLED");
+			return;
+		}
 	}
 
 	if (this->Rasterizer.PrimitiveType == krxPrimitiveType::TRIANGLES)
