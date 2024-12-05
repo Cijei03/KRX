@@ -19,10 +19,10 @@ Produces in peak about 400 FPS. Furthermore it consumes only 6MB of RAM memory!
 
 ## Features
 ### Pipeline features
-- depth testing
-- blending
-- validation layer
-- programmable shaders
+| KRX API | Depth testing | Blending |
+| --- | --- | --- |
+| 0.40.0 | Yes | Yes |
+
 ### Shader models capabilities
 
 | Shader model version | krxSM1 |
@@ -66,3 +66,13 @@ Remember that shader models are not backward compatible. It means newer shader m
 | i32mat2 | No |
 | i32mat3 | No |
 | i32mat4 | No |
+
+## Building
+If you want build this repository you need:
+- CMake 3.24 or newer
+- Ninja 1.10 or newer
+- GCC with C++17 support
+It may also require additional X11 dependencies.<br>If all upper requirements are met, just run build.sh script in root directory - it will build static library, shaders and samples.<br>
+
+## Using this library
+If you want use this library in your project - feel free to do this, even for commercial projects. Let me just know about this before :)
