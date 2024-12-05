@@ -3,14 +3,14 @@
 #include "processing_pipeline.hpp"
 #include "constants.hpp"
 
-class krxShaderPipeline;
+class krxShaderPipelineSM1;
 class krxContext;
 
 struct krxShaderModule
 {
 private:
 	friend class krxContext;
-	friend class krxShaderPipeline;
+	friend class krxShaderPipelineSM1;
 	friend class intern::krxPPipelineTriangles;
 	void* shader_function = nullptr;
 	uint32_t InputSizeRequirements[KRX_IMPLEMENTATION_MAX_ATTRIBUTES_COUNT]{};
@@ -27,7 +27,7 @@ struct krxShaderCreationInfo
 	std::string Path;
 };
 
-class krxShaderPipeline
+class krxShaderPipelineSM1
 {
 private:
 	friend class krxContext;
@@ -37,6 +37,6 @@ private:
 
 	std::vector<void*> ShaderHandles;
 public:
-	krxShaderPipeline(const std::vector<krxShaderCreationInfo>& ShadersCreationInfo, const krxShaderStageBitMask StagesBitMask);
-	~krxShaderPipeline();
+	krxShaderPipelineSM1(const std::vector<krxShaderCreationInfo>& ShadersCreationInfo, const krxShaderStageBitMask StagesBitMask);
+	~krxShaderPipelineSM1();
 };

@@ -10,3 +10,5 @@ void fs_main(const krx_ShaderInterface* Input, krx_ShaderInterface* Output, cons
 {
 	krx_shader_out(krx_f32vec4, 0) = krx_unpack_shader_uniform(TriangleData, 0).TriangleColor;
 }
+
+const krxSM SM = 1;

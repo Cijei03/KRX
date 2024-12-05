@@ -119,7 +119,7 @@ void krxContext::clear_depth_target()
 	std::memset(reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Data.data(), 255, reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Data.size());
 }
 
-void krxContext::bind_shader_pipeline(krxShaderPipeline* Pipeline)
+void krxContext::bind_shader_pipeline(krxShaderPipelineSM1* Pipeline)
 {
 	this->ShaderPipeline = Pipeline;
 }

@@ -12,7 +12,7 @@ Welcome in KRX repository! It is my own C++ API for rendering 3D graphics. All c
 ### Rendering simple triangle with barycentric interpolation produces<br>
 | CPU | OS | Environment | KRX API | FPS |
 | ---- | --- | --- | -- | --- |
-| Intel Core i7-4770K @ 4400MHz | Linux Kubuntu 22.04 LTS | X11 | 0.40.0 | 350 |
+| Intel Core i7-4770K @ 4400MHz | Linux Kubuntu 22.04 LTS | X11 | 0.40.0 | 370 |
 
 Additionally it consumes only 6MB of RAM memory!
 
@@ -40,9 +40,9 @@ Remember that shader models are not backward compatible. It means newer shader m
 ### Shader models arithmethical types
   | Shader model version | krxSM1 |
 | -------------------------- | --- |
-| f16vec4 | Yes |
-| f16vec3 | Yes |
-| f16vec2 | Yes |
+| f16vec4 | No |
+| f16vec3 | No |
+| f16vec2 | No |
 | f32vec4 | Yes |
 | f32vec3 | Yes |
 | f32vec2 | Yes |

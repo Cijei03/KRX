@@ -31,7 +31,7 @@ private:
 
 private:
 	krxPipelineLayout* PipelineLayout = nullptr;
-	krxShaderPipeline* ShaderPipeline = nullptr;
+	krxShaderPipelineSM1* ShaderPipeline = nullptr;
 	bool IsBlendingEnabled = false;
 
 	intern::krxPPipelineTriangles ppTriangles;
@@ -58,7 +58,7 @@ public:
 		void disable_feature(const krxRasterizerFeature Feature);
 	} Rasterizer;
 
-	void bind_shader_pipeline(krxShaderPipeline* Pipeline);
+	void bind_shader_pipeline(krxShaderPipelineSM1* Pipeline);
 	void bind_pipeline_layout(krxPipelineLayout* Layout);
 	void clear_color_targets(const glm::vec4 RGBA);
 	void fast_clear_color_targets();

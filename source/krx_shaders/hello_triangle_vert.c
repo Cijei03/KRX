@@ -17,3 +17,5 @@ void shader_attribs_requirements(uint32_t* InputRequirements)
 {
 	InputRequirements[0] = sizeof(krx_f32vec2);
 }
+
+const krxSM SM = 1;

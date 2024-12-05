@@ -17,7 +17,7 @@ std::unique_ptr<krxBuffer> TriangleVertexBuffer;
 std::unique_ptr<krxResourceView> TriangleVertexBufferView;
 
 std::unique_ptr<krxPipelineLayout> PipelineLayout;
-std::unique_ptr<krxShaderPipeline> ShaderPipeline;
+std::unique_ptr<krxShaderPipelineSM1> ShaderPipeline;
 
 int main()
 {
@@ -75,7 +75,7 @@ int main()
 		}
 	);
 	// Create shaders pipeline.
-	ShaderPipeline = std::make_unique<krxShaderPipeline>
+	ShaderPipeline = std::make_unique<krxShaderPipelineSM1>
 	(
 		std::vector<krxShaderCreationInfo>
 		{
