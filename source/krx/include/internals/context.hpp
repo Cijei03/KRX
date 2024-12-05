@@ -32,6 +32,7 @@ private:
 private:
 	krxPipelineLayout* PipelineLayout = nullptr;
 	krxShaderPipeline* ShaderPipeline = nullptr;
+	bool IsBlendingEnabled = false;
 
 	intern::krxPPipelineTriangles ppTriangles;
 public:
@@ -63,6 +64,9 @@ public:
 	void fast_clear_color_targets();
 	void clear_depth_target();
 	void draw(const uint32_t VertexStart, const uint32_t VertexCount);
+
+	void enable_blending();
+	void disable_blending();
 
 	krxContext() = default;
 	~krxContext();

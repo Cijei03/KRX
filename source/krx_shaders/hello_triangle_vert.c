@@ -1,6 +1,6 @@
 #include "shader_defs.h"
 
-void vs_main(const krx_ShaderInterface* Input, krx_ShaderInterface* Output, krxsl_VariablesVS* krxslVariables)
+void vs_main(const krx_ShaderInterface* Input, krx_ShaderInterface* Output, krxsl_VariablesVS* krxslVariables, const krxShaderUniformInterface Uniforms)
 {
 	const krx_f32vec3 ColorData[3] = 
 	{

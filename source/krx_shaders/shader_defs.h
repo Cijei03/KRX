@@ -9,7 +9,7 @@ typedef struct krx_ShaderAttribute_t
 
 typedef krx_ShaderAttribute krx_ShaderInterface[KRX_IMPLEMENTATION_MAX_ATTRIBUTES_COUNT];
 
-typedef void* krx_ShaderUniformBuffer;
+typedef uint8_t* krx_ShaderUniformBuffer;
 
 typedef krx_ShaderUniformBuffer krxShaderUniformInterface[KRX_IMPLEMENTATION_MAX_UNIFORM_TARGET_COUNT];
 
@@ -318,6 +318,8 @@ krx_f32vec2 barycentric_interpolation_f32_2(const krx_ShaderInterface* fsInput, 
 }
 
 #define krx_shader_out(Type, Index) *(Type*)&*Output[Index]
+#define krx_shader_uniform_def typedef struct
+#define krx_unpack_shader_uniform(Type, Index) (*(const Type*)Uniforms[Index])
 
 #define SV_POSITION krxslVariables->SV_POSITION
 #define SV_VERTEXID krxslVariables->SV_VERTEXID

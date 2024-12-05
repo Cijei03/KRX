@@ -16,8 +16,20 @@ std::unique_ptr<krxResourceView> SwapchainBackBufferView;
 std::unique_ptr<krxBuffer> TriangleVertexBuffer;
 std::unique_ptr<krxResourceView> TriangleVertexBufferView;
 
+std::unique_ptr<krxBuffer> ColorUniformBuffer;
+std::unique_ptr<krxResourceView> ColorUniformBufferView;
+
 std::unique_ptr<krxPipelineLayout> PipelineLayout;
 std::unique_ptr<krxShaderPipeline> ShaderPipeline;
+
+std::unique_ptr<krxTexture2D> DepthBuffer;
+std::unique_ptr<krxResourceView> DepthBufferView;
+
+struct TriangleUniformData
+{
+	glm::f32vec4 Color;
+	glm::f32vec3 Offset;
+};
 
 int main()
 {
@@ -36,6 +48,43 @@ int main()
 			.Target = krxTextureTarget::COLOR_RENDER_TARGET_OUTPUT
 		}
 	);
+	// Create depth buffer.
+	{
+		DepthBuffer = std::make_unique<krxTexture2D>
+		(
+			krxTextureCreationInfo
+			{
+				.Format = krxFormat::UINT8_R,
+				.Size
+				{
+					.Width = wndWidth,
+					.Height = wndHeight
+				}
+			}
+		);
+
+		DepthBufferView = std::make_unique<krxResourceView>
+		(
+			krxViewCreationInfo
+			{
+				.Resource = DepthBuffer.get(),
+				.Target = krxTextureTarget::DEPTH_RENDER_TARGET_OUTPUT
+			}
+		);
+	}
+	// Create uniform buffer.
+	{
+		ColorUniformBuffer = std::make_unique<krxBuffer>(sizeof(TriangleUniformData));
+
+		ColorUniformBufferView = std::make_unique<krxResourceView>
+		(
+			krxViewCreationInfo
+			{
+				.Resource = ColorUniformBuffer.get(),
+				.Target = krxBufferTarget::SHADER_UNIFORM_TARGET
+			}
+		);
+	}
 	// Create vertex buffer.
 	{
 		float Vertices[6] =
@@ -71,6 +120,16 @@ int main()
 			{
 				.Index = 0,
 				.View = TriangleVertexBufferView.get()
+			},
+			krxViewInfo
+			{
+				.Index = 0,
+				.View = ColorUniformBufferView.get()
+			},
+			krxViewInfo
+			{
+				.Index = 0,
+				.View = DepthBufferView.get()
 			}
 		}
 	);
@@ -81,11 +140,11 @@ int main()
 		{
 			krxShaderCreationInfo
 			{
-				.Path = "hello_triangle_vert.krxsl"
+				.Path = "depth_and_blending_vert.krxsl"
 			},
 			krxShaderCreationInfo
 			{
-				.Path = "hello_triangle_frag.krxsl"
+				.Path = "depth_and_blending_frag.krxsl"
 			}
 		},
 		static_cast<krxShaderStageBitMask>(krxShaderStageBitMask::VERTEX_SHADER_BIT | krxShaderStageBitMask::FRAGMENT_SHADER_BIT)
@@ -94,6 +153,9 @@ int main()
 	Context = std::make_unique<krxContext>();
 	Context->Rasterizer.set_primitive_type(krxPrimitiveType::TRIANGLES);
 	Context->Rasterizer.set_viewport(glm::uvec2(0), glm::uvec2(wndWidth, wndHeight));
+	Context->Rasterizer.enable_feature(krxRasterizerFeature::DEPTH_TESTING);
+	Context->enable_blending();
+
 	Context->bind_pipeline_layout(PipelineLayout.get());
 	Context->bind_shader_pipeline(ShaderPipeline.get());
 
@@ -104,13 +166,46 @@ int main()
 		if (glfwGetTime() > 1.0)
 		{
 			glfwSetTime(0.0);
-			glfwSetWindowTitle(wnd, (std::string("krxSample 03 - ") + std::to_string(Frames) + std::string("FPS")).data());
+			glfwSetWindowTitle(wnd, (std::string("krxSample 04 - ") + std::to_string(Frames) + std::string("FPS")).data());
 			Frames = 0;
 		}
 		glfwPollEvents();
 
+		Context->clear_depth_target();
 		Context->fast_clear_color_targets();
-		Context->draw(0, 3);
+		// First triangle
+		{
+			TriangleUniformData Data
+			{
+				.Color = glm::f32vec4(0.0f, 1.0f, 0.4f, 1.0f),
+				.Offset = glm::f32vec3(-0.25f, 0.0f, 0.5f)
+			};
+			
+			ColorUniformBuffer->update_buffer(&Data);
+			Context->draw(0, 3);
+		}
+		// Second triangle
+		{
+			TriangleUniformData Data
+			{
+				.Color = glm::f32vec4(0.7f, 1.0f, 1.0f, 1.0f),
+				.Offset = glm::f32vec3(0.25f, 0.0f, 0.5f)
+			};
+			
+			ColorUniformBuffer->update_buffer(&Data);
+			Context->draw(0, 3);
+		}
+		// Third triangle
+		{
+			TriangleUniformData Data
+			{
+				.Color = glm::f32vec4(1.0f, 0.3f, 0.0f, 0.8f),
+				.Offset = glm::f32vec3(0.0f, 0.250f, 0.25f)
+			};
+			
+			ColorUniformBuffer->update_buffer(&Data);
+			Context->draw(0, 3);
+		}
 
 		Swapchain->present();
 		Frames++;

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 struct ShaderAttribute
 {
@@ -17,5 +18,8 @@ struct VariablesVS
 	const uint32_t SV_VERTEXID;
 };
 
-using krxVertexShader = void(*)(const ShaderInterface* Input, ShaderInterface* Output, VariablesVS* krxslVariables);
-using krxFragmentShader = void(*)(const ShaderInterface* Input, ShaderInterface* Output, const float* Weights);
+using krx_ShaderUniformBuffer = uint8_t*;
+using krxShaderUniformInterface = krx_ShaderUniformBuffer[KRX_IMPLEMENTATION_MAX_UNIFORM_TARGET_COUNT];
+
+using krxVertexShader = void(*)(const ShaderInterface* Input, ShaderInterface* Output, VariablesVS* krxslVariables, const krxShaderUniformInterface* Uniforms);
+using krxFragmentShader = void(*)(const ShaderInterface* Input, ShaderInterface* Output, const float* Weights, const krxShaderUniformInterface* Uniforms);

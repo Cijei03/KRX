@@ -7,6 +7,37 @@
 
 #include <iostream>
 
+static bool depth_test_enabled(uint8_t* DepthBuffer, const int16_t PixelDepth, const glm::i16vec2 CurrentPixel, const uint16_t DepthBufferWidth)
+{
+	if (PixelDepth > 255) return false;
+	if (PixelDepth < 0) return false;
+
+	if (DepthBuffer[CurrentPixel.y * DepthBufferWidth + CurrentPixel.x] > PixelDepth)
+	{
+		DepthBuffer[CurrentPixel.y * DepthBufferWidth + CurrentPixel.x] = static_cast<uint8_t>(PixelDepth);
+		return true;
+	}
+	return false;
+}
+static bool depth_test_disabled(uint8_t* DepthBuffer, const int16_t PixelDepth, const glm::i16vec2 CurrentPixel, const uint16_t DepthBufferWidth)
+{
+	if (PixelDepth > 255) return false;
+	if (PixelDepth < 0) return false;
+
+	return true;
+}
+
+static glm::u8vec4 blend_mode_enabled(const glm::u8vec4& fsOutput, const glm::u8vec4& BackBufferColor)
+{
+	const float SrcAlpha = static_cast<float>(fsOutput[3]) / 255.0f;
+	const float DstAlpha = 1.0f - SrcAlpha;
+	return glm::u8vec4(fsOutput[0] * SrcAlpha, fsOutput[1] * SrcAlpha, fsOutput[2] * SrcAlpha, fsOutput[3] * SrcAlpha) + glm::u8vec4(BackBufferColor[0] * DstAlpha, BackBufferColor[1] * DstAlpha, BackBufferColor[2] * DstAlpha, BackBufferColor[3] * DstAlpha);
+}
+static glm::u8vec4 blend_mode_disabled(const glm::u8vec4& fsOutput, const glm::u8vec4& BackBufferColor)
+{
+	return glm::u8vec4(fsOutput[0], fsOutput[1], fsOutput[2], 255);
+}
+
 static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizationData* GlobalData, const ShaderInterface* fsInput, std::condition_variable* cv, intern::krxPPipelineTStatus* Status)
 {
 	std::mutex m;
@@ -16,7 +47,7 @@ static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizati
 	while (true)
 	{
 		cv->notify_one();
-		cv->wait_for(Lock, std::chrono::milliseconds(200), [Status](){ return *Status != intern::krxPPipelineTStatus::IDLE; });
+		cv->wait_for(Lock, std::chrono::milliseconds(500), [Status](){ return *Status != intern::krxPPipelineTStatus::IDLE; });
 
 		if (*Status == intern::krxPPipelineTStatus::RENDER)
 		{
@@ -49,7 +80,15 @@ static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizati
 							static_cast<float>(signs[2]) * GlobalData->TriangleAreaMultiplier
 						);
 
-						reinterpret_cast<krxFragmentShader>(GlobalData->fs_main)(fsInput, &FragmentShaderOutput, reinterpret_cast<float*>(&Weights));
+						const int16_t PixelDepth = Weights[0] * GlobalData->NDCDepths[0] + Weights[1] * GlobalData->NDCDepths[1] + Weights[2] * GlobalData->NDCDepths[2];
+
+						if (!GlobalData->DepthTestInfo.test_depth(GlobalData->DepthTestInfo.DepthBuffer, PixelDepth, CurrentPixel, GlobalData->DepthTestInfo.DepthBufferWidth))
+						{
+							CurrentPixel.x++;
+							continue;
+						}
+
+						reinterpret_cast<krxFragmentShader>(GlobalData->fs_main)(fsInput, &FragmentShaderOutput, reinterpret_cast<float*>(&Weights), reinterpret_cast<const krxShaderUniformInterface*>(GlobalData->ShaderUniformTargets.data()));
 
 						for (uint8_t i = 0; i < KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT; i++)
 						{
@@ -59,9 +98,10 @@ static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizati
 							{
 								if (TargetFormat == krxFormat::PRESENT_FORMAT)
 								{
-									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
 									const auto PositionInBuffer = reinterpret_cast<glm::u8vec4*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
-									*PositionInBuffer = glm::u8vec4(Ptr[2] * 255, Ptr[1] * 255, Ptr[0] * 255, Ptr[3] * 255);
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+
+									*PositionInBuffer = GlobalData->blend(glm::u8vec4(Ptr[2] * 255, Ptr[1] * 255, Ptr[0] * 255, Ptr[3] * 255), *PositionInBuffer);
 								}
 							}
 						}
@@ -100,6 +140,15 @@ namespace intern
 			this->GlobalRasterizerData.check_pixel = check_pixel_cw;
 		}
 
+		if (Configuration->IsBlendingEnabled)
+		{
+			this->GlobalRasterizerData.blend = blend_mode_enabled;
+		}
+		else
+		{
+			this->GlobalRasterizerData.blend = blend_mode_disabled;
+		}
+
 		for (uint8_t i = 0; i < KRX_IMPLEMENTATION_MAX_RENDER_TARGET_OUTPUT_COUNT; i++)
 		{
 			this->GlobalRasterizerData.RenderTargetOutputs[i] = reinterpret_cast<krxTexture2D*>(Configuration->PipelineLayout->RenderTargetOutputs[0]->Info.Resource)->Data.data();
@@ -120,6 +169,28 @@ namespace intern
 				InputFromBuffers[i] = reinterpret_cast<krxBuffer*>(Configuration->PipelineLayout->Attributes[i]->Info.Resource)->Data.data() + InputJumpLengths[i] * vStart;
 			}
 		}
+
+		for (uint8_t i = 0; i < KRX_IMPLEMENTATION_MAX_UNIFORM_TARGET_COUNT; i++)
+		{
+			if (Configuration->PipelineLayout->UniformBuffers[i] != nullptr)
+			{
+				this->GlobalRasterizerData.ShaderUniformTargets[i] = reinterpret_cast<krxBuffer*>(Configuration->PipelineLayout->UniformBuffers[i]->Info.Resource)->Data.data();
+			}
+		}
+
+		this->GlobalRasterizerData.DepthTestInfo.DepthTestEnabled = (Configuration->Rasterizer.Features & static_cast<uint8_t>(krxRasterizerFeature::DEPTH_TESTING));
+		if (Configuration->PipelineLayout->DepthBuffer != nullptr)
+		{
+			this->GlobalRasterizerData.DepthTestInfo.DepthBuffer = reinterpret_cast<krxTexture2D*>(Configuration->PipelineLayout->DepthBuffer->Info.Resource)->Data.data();
+			this->GlobalRasterizerData.DepthTestInfo.DepthBufferWidth = reinterpret_cast<krxTexture2D*>(Configuration->PipelineLayout->DepthBuffer->Info.Resource)->Info.Size.Width;
+			this->GlobalRasterizerData.DepthTestInfo.test_depth = depth_test_enabled;
+		}
+		else
+		{
+			this->GlobalRasterizerData.DepthTestInfo.test_depth = depth_test_disabled;
+		}
+		
+		
 
 		for (uint32_t v = vStart; v < vStart + vCount; v += 3)
 		{
@@ -154,13 +225,17 @@ namespace intern
 					}
 				}
 
-				VertexShaderFunc(&vsInputData[vTriangle], &reinterpret_cast<ShaderInterface*>(this->vsOutputInterfaces)[vTriangle], &ShaderVariables[vTriangle]);
+				VertexShaderFunc(&vsInputData[vTriangle], &reinterpret_cast<ShaderInterface*>(this->vsOutputInterfaces)[vTriangle], &ShaderVariables[vTriangle], reinterpret_cast<const krxShaderUniformInterface*>(this->GlobalRasterizerData.ShaderUniformTargets.data()));
 			}
 
 			// Prepare for rasterization.
 			this->GlobalRasterizerData.NDCs[0] = ndc_to_pixel_coord(ShaderVariables[0].SV_POSITION, Configuration->Rasterizer.Viewport.Size);
 			this->GlobalRasterizerData.NDCs[1] = ndc_to_pixel_coord(ShaderVariables[1].SV_POSITION, Configuration->Rasterizer.Viewport.Size);
 			this->GlobalRasterizerData.NDCs[2] = ndc_to_pixel_coord(ShaderVariables[2].SV_POSITION, Configuration->Rasterizer.Viewport.Size);
+
+			this->GlobalRasterizerData.NDCDepths[0] = 255 * (ShaderVariables[0].SV_POSITION.z * 0.5f + 0.5f);
+			this->GlobalRasterizerData.NDCDepths[1] = 255 * (ShaderVariables[1].SV_POSITION.z * 0.5f + 0.5f);
+			this->GlobalRasterizerData.NDCDepths[2] = 255 * (ShaderVariables[2].SV_POSITION.z * 0.5f + 0.5f);
 
 			this->GlobalRasterizerData.MinTriangleBound.x = min(this->GlobalRasterizerData.NDCs[0].x, this->GlobalRasterizerData.NDCs[1].x, this->GlobalRasterizerData.NDCs[2].x);
 			this->GlobalRasterizerData.MinTriangleBound.y = min(this->GlobalRasterizerData.NDCs[0].y, this->GlobalRasterizerData.NDCs[1].y, this->GlobalRasterizerData.NDCs[2].y);

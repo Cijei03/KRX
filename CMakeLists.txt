@@ -55,3 +55,8 @@ set(KRX_SAMPLE2_NAME "03_hello_triangle")
 add_executable(${KRX_SAMPLE2_NAME})
 target_sources(${KRX_SAMPLE2_NAME} PRIVATE "source/samples/03_hello_triangle.cpp")
 add_dependencies(${KRX_SAMPLE2_NAME} ${PROJECT_NAME})
+
+set(KRX_SAMPLE3_NAME "04_depth_and_blending")
+add_executable(${KRX_SAMPLE3_NAME})
+target_sources(${KRX_SAMPLE3_NAME} PRIVATE "source/samples/04_depth_and_blending.cpp")
+add_dependencies(${KRX_SAMPLE3_NAME} ${PROJECT_NAME})

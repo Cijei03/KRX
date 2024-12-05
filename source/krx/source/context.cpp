@@ -108,13 +108,15 @@ void krxContext::clear_depth_target()
 	if (this->PipelineLayout == nullptr)
 	{
 		krxValidationLayerMessage("CONTEXT_clear_depth_target-NO_PIPELINE_LAYOUT_BOUND");
+		return;
 	}
 	if (this->PipelineLayout->DepthBuffer == nullptr)
 	{
 		krxValidationLayerMessage("CONTEXT_clear_depth_target-NO_DEPTH_RENDER_TARGET_OUTPUT_BOUND");
+		return;
 	}
 
-	std::memset(reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer)->Data.data(), 255, reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer)->Data.size());
+	std::memset(reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Data.data(), 255, reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Data.size());
 }
 
 void krxContext::bind_shader_pipeline(krxShaderPipeline* Pipeline)
@@ -144,14 +146,42 @@ void krxContext::draw(const uint32_t VertexStart, const uint32_t VertexCount)
 				FoundColorBuffer = true;
 				if (reinterpret_cast<krxTexture2D*>(CRTO->Info.Resource)->Info.Size.Width > this->Rasterizer.Viewport.Position.x + this->Rasterizer.Viewport.Size.x)
 				{
-					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_RENDER_OUTPUT_TARGET");
+					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_COLOR_RENDER_OUTPUT_TARGET");
 					return;
 				}
 				else if (reinterpret_cast<krxTexture2D*>(CRTO->Info.Resource)->Info.Size.Height > this->Rasterizer.Viewport.Position.y + this->Rasterizer.Viewport.Size.y)
 				{
-					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_RENDER_OUTPUT_TARGET");
+					krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_COLOR_RENDER_OUTPUT_TARGET");
 					return;
 				}
+			}
+		}
+
+		if (this->PipelineLayout->DepthBuffer != nullptr)
+		{
+			if (reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Info.Size.Width > this->Rasterizer.Viewport.Position.x + this->Rasterizer.Viewport.Size.x)
+			{
+				krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_DEPTH_RENDER_OUTPUT_TARGET");
+				return;
+			}
+			else if (reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Info.Size.Height > this->Rasterizer.Viewport.Position.y + this->Rasterizer.Viewport.Size.y)
+			{
+				krxValidationLayerMessage("CONTEXT_draw-VIEWPORT_IS_BIGGER_THAN_DEPTH_RENDER_OUTPUT_TARGET");
+				return;
+			}
+
+			if (reinterpret_cast<krxTexture2D*>(this->PipelineLayout->DepthBuffer->Info.Resource)->Info.Format != krxFormat::UINT8_R)
+			{
+				krxValidationLayerMessage("CONTEXT_draw-DEPTH_RENDER_OUTPUT_TARGET_MUST_HAVE_UINT8_R_FORMAT");
+				return;
+			}
+		}
+		else
+		{
+			if (this->Rasterizer.Features & static_cast<uint8_t>(krxRasterizerFeature::DEPTH_TESTING))
+			{
+				krxValidationLayerMessage("CONTEXT_draw-NO_DEPTH_BUFFER_BOUND_AND_RASTERIZER_FEATURE_DEPTH_TESTING_ENABLED");
+				return;
 			}
 		}
 
@@ -171,4 +201,13 @@ void krxContext::draw(const uint32_t VertexStart, const uint32_t VertexCount)
 krxContext::~krxContext()
 {
 	this->ppTriangles.shutdown();
+}
+
+void krxContext::enable_blending()
+{
+	this->IsBlendingEnabled = true;
+}
+void krxContext::disable_blending()
+{
+	this->IsBlendingEnabled = false;
 }

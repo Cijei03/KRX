@@ -14,3 +14,5 @@ function Compile
 
 Compile "hello_triangle_vert.krxsl" "hello_triangle_vert.c"
 Compile "hello_triangle_frag.krxsl" "hello_triangle_frag.c"
+Compile "depth_and_blending_vert.krxsl" "depth_and_blending_vert.c"
+Compile "depth_and_blending_frag.krxsl" "depth_and_blending_frag.c"
