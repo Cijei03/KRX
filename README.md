@@ -39,7 +39,7 @@ Additionally it consumes only 6MB of RAM memory!
 | SV_VERTEXID | Yes |
 | SV_PIXELCOORD | No |
 
-Remember that shader models are not backward compatible. It means newer shader model will not work on older shader model.
+Remember that shader models are not backward compatible. It means newer shader model will not work on older API version.
 
 ### Shader models arithmethical types
   | Shader model version | krxSM1 |
