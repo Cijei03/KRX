@@ -9,7 +9,7 @@ Welcome in KRX repository! It is my own C++ API for rendering 3D graphics. All c
 ## Performance
 ![alt text](https://cijei03.github.io/resources/hello_triangle.png)
 
-### Rendering simple triangle with barycentric interpolation produces<br>
+### Rendering 03 sample produces<br>
 | CPU | OS | Environment | KRX API | FPS |
 | ---- | --- | --- | -- | --- |
 | Intel Core i7-4770K @ 4400MHz | Linux Kubuntu 22.04 LTS | X11 | 0.40.0 | 370 |
