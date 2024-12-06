@@ -16,6 +16,10 @@ Welcome in KRX repository! It is my own C++ API for rendering 3D graphics. All c
 
 Additionally it consumes only 6MB of RAM memory!
 
+## Systems compatibility
+| KRX API | OS | Supported environments |
+| --- | --- | --- |
+| 0.40.0 | Linux | X11 |
 
 ## Features
 ### Pipeline features
