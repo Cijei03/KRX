@@ -103,6 +103,34 @@ static void batch_main(intern::RasterizerBatch* Batch, intern::GlobalRasterizati
 
 									*PositionInBuffer = GlobalData->blend(glm::u8vec4(Ptr[2] * 255, Ptr[1] * 255, Ptr[0] * 255, Ptr[3] * 255), *PositionInBuffer);
 								}
+								else if (TargetFormat == krxFormat::UINT8_RGBA)
+								{
+									const auto PositionInBuffer = reinterpret_cast<glm::u8vec4*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+
+									*PositionInBuffer = GlobalData->blend(glm::u8vec4(Ptr[0] * 255, Ptr[1] * 255, Ptr[2] * 255, Ptr[3] * 255), *PositionInBuffer);
+								}
+								else if (TargetFormat == krxFormat::UINT8_RGB)
+								{
+									const auto PositionInBuffer = reinterpret_cast<glm::u8vec3*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+
+									*PositionInBuffer = glm::u8vec3(GlobalData->blend(glm::u8vec4(Ptr[0] * 255, Ptr[1] * 255, Ptr[2] * 255, 255), glm::u8vec4(*PositionInBuffer, 255)));
+								}
+								else if (TargetFormat == krxFormat::UINT8_RG)
+								{
+									const auto PositionInBuffer = reinterpret_cast<glm::u8vec2*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+
+									*PositionInBuffer = glm::u8vec2(GlobalData->blend(glm::u8vec4(Ptr[0] * 255, Ptr[1] * 255, 0, 255), glm::u8vec4(*PositionInBuffer, 0, 255)));
+								}
+								else if (TargetFormat == krxFormat::UINT8_R)
+								{
+									const auto PositionInBuffer = reinterpret_cast<float*>(GlobalData->RenderTargetOutputs[i]) + CurrentPixel.y * GlobalData->RenderTargetWidths[i] + CurrentPixel.x;
+									const float* Ptr = reinterpret_cast<const float*>(&FragmentShaderOutput[i]);
+
+									*PositionInBuffer = GlobalData->blend(glm::u8vec4(Ptr[0] * 255, 0, 0, 255), glm::u8vec4(*PositionInBuffer, 0, 0, 255)).x;
+								}
 							}
 						}
 					}

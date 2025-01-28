@@ -13,6 +13,7 @@ Welcome in KRX repository! It is my own C++ API for rendering 3D graphics. All c
 | CPU | OS | Environment | KRX API | FPS |
 | ---- | --- | --- | -- | --- |
 | Intel Core i7-4770K @ 4400MHz | Linux Kubuntu 22.04 LTS | X11 | 0.40.0 | 370 |
+| Intel Core i5-5300U | Linux KDE Neon 6.0 | X11 | 0.40.0 | 140 |
 
 Additionally it consumes only 6MB of RAM memory!
 
